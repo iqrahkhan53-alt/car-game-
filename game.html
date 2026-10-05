@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Apex Velocity 3D — Open-World High-Performance Racing</title>
+    <meta name="description"
+        content="Cinematic 3D open-world racing and driving game powered by WebGL and Three.js. Drive supercars through modern city streets, suspension bridges, mountain hairpins, and tunnels.">
+
+    <!-- Google Fonts for futuristic racing aesthetic -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Rajdhani:wght@500;600;700;800&family=Orbitron:wght@700;900&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- WebGL 3D Canvas Rendering Container -->
+    <div id="canvas-container"></div>
+
+    <!-- SVG Global Definitions for Gradient Gauges -->
+    <svg width="0" height="0" style="position: absolute;">
+        <defs>
+            <linearGradient id="speedo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#00f0ff" />
+                <stop offset="60%" stop-color="#00a2ff" />
+                <stop offset="100%" stop-color="#ff2a44" />
+            </linearGradient>
+        </defs>
+    </svg>
+
+    <!-- Complete HTML5 UI & HUD Overlay -->
+    <div id="ui-root">
+
+        <!-- ==========================================
+         1. START / PRELOADING SCREEN
+         ========================================== -->
+        <div id="start-screen" class="overlay-screen">
+            <div class="brand-container">
+                <span class="game-logo-badge">NEXT-GEN 3D BROWSER SIMULATOR</span>
+                <h1 class="game-title">APEX VELOCITY</h1>
+                <p class="game-subtitle">OPEN WORLD RACING &bull; CITY &bull; MOUNTAIN PASS &bull; TUNNELS</p>
+            </div>
+
+            <div class="loader-progress-box">
+                <div class="loader-bar-bg">
+                    <div id="loading-bar-fill" class="loader-bar-fill"></div>
+                </div>
+                <div class="loader-meta">
+                    <span id="loading-text">INITIALIZING ENGINE...</span>
+                    <span id="loading-percent">0%</span>
+                </div>
+            </div>
+
+            <button id="btn-start-game" class="btn-launch hidden">ENTER THE GRID</button>
+        </div>
+
+        <!-- ==========================================
+         2. CINEMATIC MAIN MENU
+         ========================================== -->
+        <div id="main-menu" class="menu-container hidden">
+            <div class="menu-header">
+                <div>
+                    <span class="game-logo-badge">3D RACING SIMULATION</span>
+                    <h2 style="font-size: 2.8rem; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase;">
+                        APEX VELOCITY</h2>
+                </div>
+            </div>
+
+            <div class="menu-nav">
+                <button id="btn-menu-free" class="btn-menu primary">
+                    <span>FREE DRIVE</span>
+                    <span>&rarr;</span>
+                </button>
+                <button id="btn-menu-race" class="btn-menu">
+                    <span>RACE MODES</span>
+                    <span>&rarr;</span>
+                </button>
+                <button id="btn-menu-garage" class="btn-menu">
+                    <span>GARAGE &amp; CARS</span>
+                    <span>&rarr;</span>
+                </button>
+                <button id="btn-menu-map" class="btn-menu">
+                    <span>WORLD MAP [M]</span>
+                    <span>&rarr;</span>
+                </button>
+                <button id="btn-menu-settings" class="btn-menu">
+                    <span>SETTINGS</span>
+                    <span>&rarr;</span>
+                </button>
+                <button id="btn-menu-help" class="btn-menu">
+                    <span>CONTROLS</span>
+                    <span>&rarr;</span>
+                </button>
+            </div>
+
+            <div class="menu-footer">
+                <span>THREE.JS &bull; WEBGL ENGINE &bull; 60 FPS</span>
+                <span>PRESS [M] FOR WORLD MAP &bull; [C] FOR 5 CAMERAS &bull; [SHIFT] NITRO</span>
+            </div>
+        </div>
+
+        <!-- ==========================================
+         3. RACE MODE SELECT MODAL
+         ========================================== -->
+        <div id="mode-modal" class="modal-overlay hidden">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <h3 class="modal-title">SELECT RACE MODE</h3>
+                    <button class="modal-close-btn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="mode-grid">
+                        <div class="mode-card" data-mode="free_drive">
+                            <span style="font-size: 1.8rem;">🏙️</span>
+                            <h4 class="mode-card-title">Free Drive</h4>
+                            <p class="mode-card-desc">Explore the entire open world freely with no timer. Discover stunt
+                                ramps, tunnels, suspension bridge, and scenic mountain lookouts.</p>
+                        </div>
+                        <div class="mode-card" data-mode="circuit">
+                            <span style="font-size: 1.8rem;">🏁</span>
+                            <h4 class="mode-card-title">Circuit Race</h4>
+                            <p class="mode-card-desc">Compete in a 3-lap grand championship against 3 aggressive AI
+                                rivals across downtown avenues, the suspension bridge, and mountain hairpins.</p>
+                        </div>
+                        <div class="mode-card" data-mode="sprint">
+                            <span style="font-size: 1.8rem;">⚡</span>
+                            <h4 class="mode-card-title">Sprint Race</h4>
+                            <p class="mode-card-desc">High-stakes point-to-point race from Downtown across the
+                                illuminated mountain tunnel to the coastal finish line.</p>
+                        </div>
+                        <div class="mode-card" data-mode="time_trial">
+                            <span style="font-size: 1.8rem;">⏱️</span>
+                            <h4 class="mode-card-title">Time Trial</h4>
+                            <p class="mode-card-desc">Master optimal racing lines and apex braking points. Compete
+                                against the stopwatch to beat the all-time track record.</p>
+                        </div>
+                        <div class="mode-card" data-mode="checkpoint">
+                            <span style="font-size: 1.8rem;">⏳</span>
+                            <h4 class="mode-card-title">Checkpoint Challenge</h4>
+                            <p class="mode-card-desc">Arcade rush against a ticking countdown clock. Every illuminated
+                                gate passed grants +7 bonus seconds. Don't run out of time!</p>
+                        </div>
+                        <div class="mode-card" data-mode="speed">
+                            <span style="font-size: 1.8rem;">🚀</span>
+                            <h4 class="mode-card-title">Speed Challenge</h4>
+                            <p class="mode-card-desc">Activate nitrous oxide down the freeway straightaways and trigger
+                                high-speed radar traps to set the ultimate velocity record.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+         4. GARAGE & SHOWROOM MODAL
+         ========================================== -->
+        <div id="garage-modal" class="modal-overlay hidden">
+            <div class="modal-card">
+                <div class="modal-header">
+                    <h3 class="modal-title">VEHICLE SHOWROOM</h3>
+                    <button class="modal-close-btn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="garage-grid">
+                        <div class="car-select-list">
+                            <div class="car-select-card active" data-car="apex">
+                                <div>
+                                    <div class="car-name">Apex GT</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-muted);">Porsche 911 GT3 Styling
+                                        &bull; Twin-Turbo V8</div>
+                                </div>
+                                <span style="color: var(--accent-cyan); font-weight: 800;">ACTIVE</span>
+                            </div>
+                            <div class="car-select-card" data-car="phantom">
+                                <div>
+                                    <div class="car-name">Phantom Hypercar</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-muted);">Koenigsegg &bull; Bugatti
+                                        Quad-Turbo W16</div>
+                                </div>
+                                <span style="color: var(--accent-cyan); font-weight: 800;">SELECT</span>
+                            </div>
+                            <div class="car-select-card" data-car="monza">
+                                <div>
+                                    <div class="car-name">Monza V12</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-muted);">Ferrari Daytona SP3 &bull;
+                                        Roaring V12 Muscle</div>
+                                </div>
+                                <span style="color: var(--accent-cyan); font-weight: 800;">SELECT</span>
+                            </div>
+                            <div class="car-select-card" data-car="cyber">
+                                <div>
+                                    <div class="car-name">Cyber Roadster</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-muted);">Tesla Roadster &bull;
+                                        Rimac Tri-Motor EV</div>
+                                </div>
+                                <span style="color: var(--accent-cyan); font-weight: 800;">SELECT</span>
+                            </div>
+                        </div>
+
+                        <div class="car-stats-panel">
+                            <h4 style="font-size: 1.1rem; color: #ffffff;">PERFORMANCE SPECS</h4>
+                            <div class="stat-row">
+                                <div class="stat-header"><span>TOP SPEED</span><span>345 KM/H</span></div>
+                                <div class="stat-bar-bg">
+                                    <div id="stat-speed-bar" class="stat-bar-fill"></div>
+                                </div>
+                            </div>
+                            <div class="stat-row">
+                                <div class="stat-header"><span>ACCELERATION</span><span>0-100 IN 2.4s</span></div>
+                                <div class="stat-bar-bg">
+                                    <div id="stat-accel-bar" class="stat-bar-fill"></div>
+                                </div>
+                            </div>
+                            <div class="stat-row">
+                                <div class="stat-header"><span>HANDLING &amp; DOWNFORCE</span><span>1.5G LATERAL</span>
+                                </div>
+                                <div class="stat-bar-bg">
+                                    <div id="stat-handling-bar" class="stat-bar-fill"></div>
+                                </div>
+                            </div>
+                            <div class="stat-row">
+                                <div class="stat-header"><span>BRAKING FORCE</span><span>BREMBO CERAMIC</span></div>
+                                <div class="stat-bar-bg">
+                                    <div id="stat-brake-bar" class="stat-bar-fill"></div>
+                                </div>
+                            </div>
+
+                            <div style="margin-top: 1rem;">
+                                <h4 style="font-size: 1.05rem; color: #ffffff; margin-bottom: 0.4rem;">CUSTOM BODY PAINT
+                                </h4>
+                                <div class="color-palette">
+                                    <div class="color-swatch active" data-color="00e5ff" style="background: #00e5ff;"
+                                        title="Cyber Cyan"></div>
+                                    <div class="color-swatch" data-color="e6194b" style="background: #e6194b;"
+                                        title="Crimson Red"></div>
+                                    <div class="color-swatch" data-color="ffe119" style="background: #ffe119;"
+                                        title="Racing Yellow"></div>
+                                    <div class="color-swatch" data-color="f58231" style="background: #f58231;"
+                                        title="Solar Orange"></div>
+                                    <div class="color-swatch" data-color="00b894" style="background: #00b894;"
+                                        title="Emerald Green"></div>
+                                    <div class="color-swatch" data-color="911eb4" style="background: #911eb4;"
+                                        title="Neon Purple"></div>
+                                    <div class="color-swatch" data-color="18191c" style="background: #18191c;"
+                                        title="Midnight Carbon"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+         5. INTERACTIVE WORLD MAP SCREEN (M Key)
+         ========================================== -->
+        <div id="world-map-modal" class="modal-overlay hidden">
+            <div class="modal-card" style="width: 980px; max-width: 96vw; height: 86vh;">
+                <div class="modal-header">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span style="font-size: 1.6rem;">🗺️</span>
+                        <div>
+                            <h3 class="modal-title">OPEN-WORLD GPS NAVIGATION</h3>
+                            <p style="font-size: 0.8rem; color: var(--text-muted); letter-spacing: 0.05em;">CLICK ANY
+                                LANDMARK OR DESTINATION TO SET ROUTE GUIDANCE</p>
+                        </div>
+                    </div>
+                    <button class="modal-close-btn">&times;</button>
+                </div>
+                <div class="modal-body"
+                    style="padding: 1rem 1.5rem; flex-direction: row; gap: 1.5rem; overflow: hidden;">
+                    <!-- Landmarks List Sidebar -->
+                    <div class="map-sidebar">
+                        <h4
+                            style="font-size: 0.9rem; letter-spacing: 0.1em; color: var(--accent-cyan); margin-bottom: 8px;">
+                            DESTINATIONS &amp; PLACES</h4>
+                        <div id="map-landmarks-list" class="landmarks-scroll-box"></div>
+                        <button id="btn-set-waypoint" class="btn-menu primary"
+                            style="justify-content: center; margin-top: 10px; width: 100%;">
+                            <span>SET GPS WAYPOINT</span>
+                        </button>
+                    </div>
+
+                    <!-- Large Vector GPS Map Canvas -->
+                    <div class="map-canvas-container">
+                        <canvas id="world-map-canvas" width="620" height="490"></canvas>
+                        <div class="map-hint-overlay">CLICK ANYWHERE ON MAP TO SET GPS BEACON</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+         6. SETTINGS MODAL
+         ========================================== -->
+        <div id="settings-modal" class="modal-overlay hidden">
+            <div class="modal-card" style="max-width: 580px;">
+                <div class="modal-header">
+                    <h3 class="modal-title">SETTINGS &amp; GRAPHICS</h3>
+                    <button class="modal-close-btn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="settings-group">
+                        <div class="setting-item">
+                            <span class="setting-label">Real-time Shadows</span>
+                            <input type="checkbox" id="setting-shadows" checked
+                                style="transform: scale(1.4); cursor: pointer;">
+                        </div>
+                        <div class="setting-item">
+                            <span class="setting-label">Environment &amp; Weather</span>
+                            <select id="setting-weather" class="setting-input">
+                                <option value="day" selected>Clear Day</option>
+                                <option value="sunset">Golden Hour Sunset</option>
+                                <option value="night">Neon Cyber Night</option>
+                                <option value="rain">Atmospheric Rain</option>
+                                <option value="fog">Dense Mist &amp; Fog</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <span class="setting-label">AI Driver Difficulty</span>
+                            <select id="setting-difficulty" class="setting-input">
+                                <option value="easy">Casual</option>
+                                <option value="medium" selected>Standard</option>
+                                <option value="hard">Expert Pro</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <span class="setting-label">Master Volume</span>
+                            <input type="range" id="setting-vol-master" min="0" max="1" step="0.05" value="0.8">
+                        </div>
+                        <div class="setting-item">
+                            <span class="setting-label">Engine &amp; SFX Volume</span>
+                            <input type="range" id="setting-vol-sfx" min="0" max="1" step="0.05" value="0.8">
+                        </div>
+                        <div class="setting-item">
+                            <span class="setting-label">Synthwave Soundtrack</span>
+                            <input type="range" id="setting-vol-music" min="0" max="1" step="0.05" value="0.5">
+                        </div>
+                        <div class="setting-item">
+                            <span class="setting-label">Display Mode</span>
+                            <button id="btn-fullscreen" class="btn-hud-action">TOGGLE FULLSCREEN</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+         7. HOW TO PLAY / KEYBINDINGS MODAL
+         ========================================== -->
+        <div id="help-modal" class="modal-overlay hidden">
+            <div class="modal-card" style="max-width: 660px;">
+                <div class="modal-header">
+                    <h3 class="modal-title">DRIVING &amp; GPS CONTROLS</h3>
+                    <button class="modal-close-btn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="keys-grid">
+                        <div class="key-item">
+                            <div class="kbd">W / &uarr;</div>
+                            <div>
+                                <div style="font-weight: 700;">Accelerate</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">Engine throttle &amp; power
+                                </div>
+                            </div>
+                        </div>
+                        <div class="key-item">
+                            <div class="kbd">S / &darr;</div>
+                            <div>
+                                <div style="font-weight: 700;">Brake / Reverse</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">Progressive braking &amp;
+                                    reverse</div>
+                            </div>
+                        </div>
+                        <div class="key-item">
+                            <div class="kbd">A / &larr;</div>
+                            <div>
+                                <div style="font-weight: 700;">Steer Left</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">Turns car smoothly to the left
+                                </div>
+                            </div>
+                        </div>
+                        <div class="key-item">
+                            <div class="kbd">D / &rarr;</div>
+                            <div>
+                                <div style="font-weight: 700;">Steer Right</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">Turns car smoothly to the
+                                    right</div>
+                            </div>
+                        </div>
+                        <div class="key-item">
+                            <div class="kbd">M</div>
+                            <div>
+                                <div style="font-weight: 700;">World Map &amp; GPS</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">Open GPS Map to select
+                                    destinations</div>
+                            </div>
+                        </div>
+                        <div class="key-item">
+                            <div class="kbd">SPACE</div>
+                            <div>
+                                <div style="font-weight: 700;">Handbrake &amp; Drift</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">Controlled slide through
+                                    corners</div>
+                            </div>
+                        </div>
+                        <div class="key-item">
+                            <div class="kbd">SHIFT</div>
+                            <div>
+                                <div style="font-weight: 700;">Nitro Rocket Boost</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">Twin exhaust flame burst</div>
+                            </div>
+                        </div>
+                        <div class="key-item">
+                            <div class="kbd">C</div>
+                            <div>
+                                <div style="font-weight: 700;">Cycle 5 Cameras</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">Chase, Low, Hood, Cockpit,
+                                    Orbit</div>
+                            </div>
+                        </div>
+                        <div class="key-item">
+                            <div class="kbd">R</div>
+                            <div>
+                                <div style="font-weight: 700;">Reset Car</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">Respawn upright on roadway
+                                </div>
+                            </div>
+                        </div>
+                        <div class="key-item">
+                            <div class="kbd">H</div>
+                            <div>
+                                <div style="font-weight: 700;">Headlights</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">Forward projector spotlights
+                                </div>
+                            </div>
+                        </div>
+                        <div class="key-item">
+                            <div class="kbd">P / ESC</div>
+                            <div>
+                                <div style="font-weight: 700;">Pause Game</div>
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">Open pause menu</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+         8. PAUSE MENU
+         ========================================== -->
+        <div id="pause-menu" class="modal-overlay hidden">
+            <div class="modal-card" style="max-width: 380px; text-align: center;">
+                <div class="modal-header" style="justify-content: center;">
+                    <h3 class="modal-title">GAME PAUSED</h3>
+                </div>
+                <div class="modal-body" style="gap: 1rem;">
+                    <button id="btn-pause-resume" class="btn-menu primary" style="justify-content: center;">RESUME
+                        DRIVE</button>
+                    <button id="btn-pause-restart" class="btn-menu" style="justify-content: center;">RESTART
+                        RACE</button>
+                    <button id="btn-pause-mainmenu" class="btn-menu" style="justify-content: center;">MAIN MENU</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+         9. RACE RESULTS MODAL
+         ========================================== -->
+        <div id="results-modal" class="modal-overlay hidden">
+            <div class="modal-card" style="max-width: 520px;">
+                <div class="modal-header" style="justify-content: center;">
+                    <h3 id="results-title" class="modal-title">RACE FINISHED!</h3>
+                </div>
+                <div class="modal-body">
+                    <div class="results-podium">
+                        <div style="font-size: 0.85rem; letter-spacing: 0.2em; color: var(--text-muted);">FINAL STANDING
+                        </div>
+                        <div id="results-pos" class="results-rank">1ST PLACE</div>
+                    </div>
+                    <div class="results-stats-row">
+                        <div class="hud-stat-box">
+                            <span class="hud-stat-label">TOTAL TIME</span>
+                            <span id="results-time" class="hud-stat-value highlight">01:45.32</span>
+                        </div>
+                        <div class="hud-stat-box">
+                            <span class="hud-stat-label">BEST LAP</span>
+                            <span id="results-best" class="hud-stat-value">00:34.18</span>
+                        </div>
+                    </div>
+                    <div class="results-actions">
+                        <button id="btn-results-retry" class="btn-launch"
+                            style="padding: 14px 32px; font-size: 1.1rem;">RETRY</button>
+                        <button id="btn-results-menu" class="btn-menu" style="padding: 14px 28px;">MAIN MENU</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+         10. IN-GAME RACING HUD OVERLAY
+         ========================================== -->
+        <div id="hud" class="hidden">
+
+            <!-- Top Race Leaderboard Status Header -->
+            <div id="hud-race-stats" class="hud-race-header">
+                <div class="hud-stat-box">
+                    <span class="hud-stat-label">POS</span>
+                    <span id="hud-pos-val" class="hud-stat-value highlight">1/4</span>
+                </div>
+                <div class="hud-stat-box">
+                    <span class="hud-stat-label">LAP</span>
+                    <span id="hud-lap-val" class="hud-stat-value">LAP 1/3</span>
+                </div>
+                <div class="hud-stat-box">
+                    <span class="hud-stat-label">TIME</span>
+                    <span id="hud-timer-val" class="hud-stat-value">00:00.00</span>
+                </div>
+                <div class="hud-stat-box">
+                    <span class="hud-stat-label">BEST</span>
+                    <span id="hud-best-val" class="hud-stat-value">--:--</span>
+                </div>
+            </div>
+
+            <!-- Floating Live GPS Route Guidance Card -->
+            <div id="hud-gps-banner" class="hud-gps-card hidden">
+                <div id="gps-arrow" class="gps-compass-arrow">&uarr;</div>
+                <div class="gps-info">
+                    <div class="gps-title"><span id="gps-dest-name">DESTINATION</span></div>
+                    <div class="gps-distance"><span id="gps-dist-val">0m</span> TO DESTINATION</div>
+                </div>
+                <button id="btn-clear-gps" class="gps-clear-btn" title="Cancel Route">&times;</button>
+            </div>
+
+            <!-- Radar Minimap -->
+            <div class="hud-minimap-box">
+                <canvas id="minimap-canvas" width="170" height="170"></canvas>
+            </div>
+
+            <!-- Futuristic Speedometer & Gauges Cluster -->
+            <div class="hud-speedometer-box">
+                <div class="gauge-svg-wrapper">
+                    <svg class="speedo-svg" viewBox="0 0 100 100">
+                        <circle class="speedo-bg-arc" cx="50" cy="50" r="45" stroke-dasharray="283"
+                            stroke-dashoffset="70" />
+                        <circle id="hud-speed-arc" class="speedo-val-arc" cx="50" cy="50" r="45" />
+                    </svg>
+                    <div class="speed-digital-readout">
+                        <span id="hud-speed-val" class="speed-number">0</span>
+                        <span class="speed-unit">KM/H</span>
+                    </div>
+                </div>
+
+                <!-- Gear & Tachometer RPM Bar -->
+                <div class="hud-engine-row">
+                    <div id="hud-gear-val" class="gear-badge">1</div>
+                    <div class="rpm-bar-bg">
+                        <div id="hud-rpm-fill" class="rpm-bar-fill"></div>
+                    </div>
+                </div>
+
+                <!-- Nitrous Oxide Boost Meter -->
+                <div class="hud-nitro-row">
+                    <span class="nitro-icon">N<sub>2</sub>O</span>
+                    <div class="nitro-bar-bg">
+                        <div id="hud-nitro-fill" class="nitro-bar-fill"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Action Floating Bar -->
+            <div class="hud-action-bar">
+                <button id="btn-hud-map" class="btn-hud-action" title="Open World Map [M]">🗺️ MAP [M]</button>
+                <button id="btn-hud-cam" class="btn-hud-action" title="Switch Camera [C]">📷 CAM</button>
+                <button id="btn-hud-light" class="btn-hud-action" title="Toggle Lights [H]">💡 LIGHTS</button>
+                <button id="btn-hud-reset" class="btn-hud-action" title="Reset Car [R]">🔄 RESET</button>
+                <button id="btn-hud-mute" class="btn-hud-action" title="Audio Mute">🔊</button>
+            </div>
+
+            <!-- Big Animated Countdown Overlay (3, 2, 1, GO!) -->
+            <div id="countdown-overlay" class="hidden">
+                <span id="countdown-text" class="countdown-number">3</span>
+            </div>
+
+            <!-- Floating Notification & Camera Indicators -->
+            <div id="notification-banner" class="hidden">NEW TOP SPEED: 245 KM/H!</div>
+            <div id="camera-indicator" class="hidden">CAMERA: 3RD PERSON CHASE</div>
+
+        </div>
+
+    </div>
+
+    <!-- Three.js (Local offline library with CDN fallback) -->
+    <script src="libs/three.min.js"></script>
+    <script>
+        if (typeof THREE === 'undefined') {
+            document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');
+        }
+    </script>
+
+    <!-- Modular Game Architecture Scripts -->
+    <script src="js/InputManager.js"></script>
+    <script src="js/AudioManager.js"></script>
+    <script src="js/Physics.js"></script>
+    <script src="js/ParticleSystem.js"></script>
+    <script src="js/Road.js"></script>
+    <script src="js/World.js"></script>
+    <script src="js/Car.js"></script>
+    <script src="js/AIController.js"></script>
+    <script src="js/TrafficManager.js"></script>
+    <script src="js/WeatherSystem.js"></script>
+    <script src="js/CameraController.js"></script>
+    <script src="js/UIManager.js"></script>
+    <script src="js/RaceManager.js"></script>
+    <script src="js/Game.js"></script>
+    <script src="js/main.js"></script>
+
+</body>
+
+</html>
